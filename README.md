@@ -27,7 +27,7 @@
 <img src="Image/ItemLoad.gif" width="600" height="350"/>
 
 # Transform
-* 엔진에 있는 transform기능을 흉내내서 만들었습니다.
+* 엔진에 있는 transform 기능을 흉내를 내서 만들었습니다.
 * 물체의 이동, 회전, 스케일 변환이 가능합니다.
 
 ***
@@ -42,7 +42,7 @@
 <img src="Image/TransformScale.gif" width="600" height="350"/>
 
 # Socket
-* 캐릭터의 본을 부모로해서 캐릭터 본의 위치를 아이템이 따라다니게 합니다.
+* 캐릭터의 본을 부모로 해서 캐릭터 본의 위치를 아이템이 따라다니게 합니다.
 <img src="Image/Bone.gif" width="600" height="350"/>
 
 # Character Form
