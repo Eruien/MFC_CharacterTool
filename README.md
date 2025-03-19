@@ -42,7 +42,7 @@
 <img src="Image/TransformScale.gif" width="600" height="350"/>
 
 # Socket
-* 캐릭터의 본을 부모로 해서 캐릭터 본의 위치를 아이템이 따라다니게함
+* 캐릭터의 본을 부모로 해서 캐릭터 본의 위치를 아이템이 따라다니게 제작
 <img src="Image/Bone.gif" width="600" height="350"/>
 
 # Character Form
