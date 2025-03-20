@@ -89,6 +89,7 @@ public:
 <summary>Model View Form 소스파일</summary>
 
 ```cpp
+// 폼 생성 후에 Pane을 부모로 설정하기 위해 Pane을 부모 인자로 받음
 CharacterToolForm* CharacterToolForm::CreateOne(CWnd* parent)
 {
 	CharacterToolForm* pForm = new CharacterToolForm;
