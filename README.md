@@ -33,6 +33,391 @@
 * 엔진에 있는 transform 기능을 흉내를 내서 제작
 * 물체의 이동, 회전, 스케일 변환이 가능
 
+<details>
+<summary>Model View Form 헤더파일</summary>
+
+```cpp
+// 바이너리 캐릭터 데이터를 화면에 불러오는 역할
+class CharacterToolForm : public CFormView
+{
+	DECLARE_DYNCREATE(CharacterToolForm)
+public:
+	static CharacterToolForm* CreateOne(CWnd* parent);
+protected:
+	CharacterToolForm();           
+	virtual ~CharacterToolForm();
+
+public:
+#ifdef AFX_DESIGN_TIME
+	enum { IDD = IDD_CharacterToolForm };
+#endif
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+#ifndef _WIN32_WCE
+	virtual void Dump(CDumpContext& dc) const;
+#endif
+#endif
+
+protected:
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
+
+	DECLARE_MESSAGE_MAP()
+public:
+	virtual void OnInitialUpdate();
+	afx_msg void OnBnCharacterLoad();
+	afx_msg void OnBnAnimationLoad();
+	afx_msg void OnBnColor();
+	afx_msg void OnBnFont();
+	afx_msg void OnLbnSelectAnimation();
+	afx_msg void OnLbnSelectCharacter();
+public:
+	CListBox m_CharacterList;
+	CListBox m_AnimationList;
+	CString m_SelectFile;
+public:
+	void LoadAnimationFile();
+	void LoadCharacterFile();
+public:
+	static std::vector<std::vector<std::wstring>> g_AllList;
+	static std::vector<float> g_matItemNumber;
+}; 
+```
+
+</details>
+
+<details>
+<summary>Model View Form 소스파일</summary>
+
+```cpp
+CharacterToolForm* CharacterToolForm::CreateOne(CWnd* parent)
+{
+	CharacterToolForm* pForm = new CharacterToolForm;
+	pForm->Create(NULL, NULL, WS_CHILD | WS_VISIBLE,
+		CRect(0, 0, 500, 500), parent, 0, NULL);
+
+	return pForm;
+}
+
+// 데이터 교환 함수
+void CharacterToolForm::DoDataExchange(CDataExchange* pDX)
+{
+	// 데이터 교환을 위해 사용하는 기본 함수
+	CFormView::DoDataExchange(pDX);
+	// 폼에 있는 IDC_LIST를 각각 변수와 연결(애니메이션 리스트, 캐릭터 리스트)
+	DDX_Control(pDX, IDC_LIST1, m_AnimationList);
+	DDX_Text(pDX, IDC_EDIT4, m_SelectFile);
+	DDX_Control(pDX, IDC_LIST2, m_CharacterList);
+}
+
+// 초기화 작업 배열의 사이즈를 정하고 캐릭터랑 애니메이션의 기본 경로 설정
+void CharacterToolForm::OnInitialUpdate()
+{
+	CFormView::OnInitialUpdate();
+
+	g_AllList.resize(3);
+	g_matItemNumber.resize(9);
+
+	LoadCharacterFile();
+	LoadAnimationFile();
+
+	int iCount = m_AnimationList.GetCount();
+
+	for (int i = 0; i < iCount; i++)
+	{
+		CString data;
+		m_AnimationList.GetText(i, data);
+		std::wstring filePath = L"../../res/UserFile/Animation/";
+		filePath += data.GetString();
+		g_AllList[1].push_back(filePath);
+	}
+
+	iCount = m_CharacterList.GetCount();
+
+	for (int i = 0; i < iCount; i++)
+	{
+		CString data;
+		m_CharacterList.GetText(i, data);
+		std::wstring filePath = L"../../res/UserFile/Character/";
+		filePath += data.GetString();
+		g_AllList[0].push_back(filePath);
+	}
+
+	UpdateData(FALSE);
+}
+
+// 리스트에 저장되어 있는 캐릭터 파일을 로드
+void CharacterToolForm::OnBnCharacterLoad()
+{
+	CFileDialog dlg(TRUE, L"bmp", NULL,
+		OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST,
+		L"All Files(*.*)|*.*| bmp Files(*.bmp)|*.bmp|", this);
+
+	if (dlg.DoModal())
+	{
+		CString selfFilePath = dlg.GetPathName();
+		CString selfFileName = dlg.GetFileName();
+		CString selfFileExt = dlg.GetFileExt();
+
+		char Drive[MAX_PATH];
+		char Dir[MAX_PATH];
+		char FName[MAX_PATH];
+		char Ext[MAX_PATH];
+
+		_splitpath_s(CW2A(selfFilePath), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+
+		std::wstring characterLoadPath = mtw(Drive) + mtw(Dir) + mtw(FName);
+
+		if (characterLoadPath.empty()) return;
+
+		characterLoadPath += L".fbx";
+		std::replace(characterLoadPath.begin(), characterLoadPath.end(), '\\', '/');
+
+		LCharacterIO::GetInstance().CharacterWrite(characterLoadPath);
+		m_CharacterList.ResetContent();
+		LoadCharacterFile();
+		AfxMessageBox(selfFileName);
+	}
+}
+
+// 리스트에 저장되어 있는 애니메이션 파일 로드
+void CharacterToolForm::OnBnAnimationLoad()
+{
+	CFileDialog dlg(TRUE, L"bmp", NULL,
+		OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST,
+		L"All Files(*.*)|*.*| bmp Files(*.bmp)|*.bmp|", this);
+
+	if (dlg.DoModal())
+	{
+		CString selfFilePath = dlg.GetPathName();
+		CString selfFileName = dlg.GetFileName();
+		CString selfFileExt = dlg.GetFileExt();
+
+		char Drive[MAX_PATH];
+		char Dir[MAX_PATH];
+		char FName[MAX_PATH];
+		char Ext[MAX_PATH];
+
+		_splitpath_s(CW2A(selfFilePath), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+
+		std::wstring AnimationLoadPath = mtw(Drive) + mtw(Dir) + mtw(FName);
+
+		if (AnimationLoadPath.empty()) return;
+
+		AnimationLoadPath += L".fbx";
+		std::replace(AnimationLoadPath.begin(), AnimationLoadPath.end(), '\\', '/');
+		
+		LAnimationIO::GetInstance().AnimationWrite(AnimationLoadPath);
+		m_AnimationList.ResetContent();
+		LoadAnimationFile();
+		AfxMessageBox(selfFileName);
+	}
+}
+
+// 다른 디렉토리에서 애니메이션 파일을 로드 배열에 추가
+void CharacterToolForm::LoadAnimationFile()
+{
+	TCHAR path[MAX_PATH] = { 0, };
+	GetCurrentDirectory(MAX_PATH, path);
+	_tcscat_s(path, _T("\\..\\..\\res\\UserFile\\Animation\\*.*"));
+	HANDLE hSearch = NULL;
+
+	WIN32_FIND_DATA  data;
+	hSearch = FindFirstFile(path, &data);
+
+	int iCnt = 0;
+	BOOL bFind = TRUE;
+	while (bFind)
+	{
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+
+		}
+		else
+		{
+			m_AnimationList.AddString(data.cFileName);
+			//m_ObjectList.InsertItem(iCnt, data.cFileName, 0);
+			//SYSTEMTIME st;
+			////SystemTimeToFileTime(&st, &data.ftCreationTime);
+			//FileTimeToSystemTime(&data.ftCreationTime, &st);
+
+			//CString date;
+			//date.AppendFormat(_T("%ld년%ld월%ld일"), st.wYear,
+			//	st.wMonth, st.wDay);
+			//m_ObjList.SetItemText(iCnt++, 1, date);
+		}
+		bFind = FindNextFile(hSearch, &data);
+	}
+	FindClose(hSearch);
+}
+
+// 다른 디렉토리에서 캐릭터 파일을 로드 배열에 추가
+void CharacterToolForm::LoadCharacterFile()
+{
+	TCHAR path[MAX_PATH] = { 0, };
+	GetCurrentDirectory(MAX_PATH, path);
+	_tcscat_s(path, _T("\\..\\..\\res\\UserFile\\Character\\*.*"));
+	HANDLE hSearch = NULL;
+
+	WIN32_FIND_DATA  data;
+	hSearch = FindFirstFile(path, &data);
+
+	int iCnt = 0;
+	BOOL bFind = TRUE;
+	while (bFind)
+	{
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+
+		}
+		else
+		{
+			m_CharacterList.AddString(data.cFileName);
+			//m_ObjectList.InsertItem(iCnt, data.cFileName, 0);
+			//SYSTEMTIME st;
+			////SystemTimeToFileTime(&st, &data.ftCreationTime);
+			//FileTimeToSystemTime(&data.ftCreationTime, &st);
+
+			//CString date;
+			//date.AppendFormat(_T("%ld년%ld월%ld일"), st.wYear,
+			//	st.wMonth, st.wDay);
+			//m_ObjList.SetItemText(iCnt++, 1, date);
+		}
+		bFind = FindNextFile(hSearch, &data);
+	}
+	FindClose(hSearch);
+}
+
+// 애니메이션 선택시 재생
+void CharacterToolForm::OnLbnSelectAnimation()
+{
+	if (LGlobal::g_MFCModel->m_pModel == nullptr) return;
+
+	CString data;
+	int iIndex = m_AnimationList.GetCurSel();
+	if (iIndex == LB_ERR)
+	{
+		return;
+	}
+	m_AnimationList.GetText(iIndex, data);
+	m_SelectFile = data;
+
+	char Drive[MAX_PATH];
+	char Dir[MAX_PATH];
+	char FName[MAX_PATH];
+	char Ext[MAX_PATH];
+
+	_splitpath_s(CW2A(data), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+
+	std::wstring actionFileName = mtw(FName);
+	actionFileName += L".fbx";
+	LGlobal::g_MFCModel->m_pActionModel = LFbxMgr::GetInstance().GetPtr(actionFileName);
+	UpdateData(FALSE);
+}
+
+// 캐릭터 선택시 모델을 불러옴
+void CharacterToolForm::OnLbnSelectCharacter()
+{
+	CString data;
+	int iIndex = m_CharacterList.GetCurSel();
+	if (iIndex == LB_ERR)
+	{
+		return;
+	}
+	m_CharacterList.GetText(iIndex, data);
+
+	char Drive[MAX_PATH];
+	char Dir[MAX_PATH];
+	char FName[MAX_PATH];
+	char Ext[MAX_PATH];
+
+	_splitpath_s(CW2A(data), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+
+	std::wstring characterFileName = mtw(FName);
+	characterFileName += L".fbx";
+	LGlobal::g_MFCModel->m_pModel = LFbxMgr::GetInstance().GetPtr(characterFileName);
+	UpdateData(FALSE);
+}
+```
+
+</details>
+
+<details>
+<summary>Model View Pane 헤더파일</summary>
+
+```cpp
+// 폼의 부모가 되서 여기저기 부착되는 역할
+class CharacterToolPane : public CDockablePane
+{
+	DECLARE_DYNAMIC(CharacterToolPane)
+public:
+	CharacterToolForm* m_wndForm;
+public:
+	CharacterToolPane();
+	virtual ~CharacterToolPane();
+
+protected:
+	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg int OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message);
+}; 
+```
+
+</details>
+
+<details>
+<summary>Model View Pane 소스파일</summary>
+
+```cpp
+// 폼을 생성하고 Pane을 부모로 설정
+int CharacterToolPane::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	// 기본 토대가 되는 생성 실패시 -1 반환
+	if (CDockablePane::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	// Bone의 폼 생성 Bone의 Pane을 부모로 설정
+	m_wndForm = CharacterToolForm::CreateOne(this);
+
+	return 0;
+}
+
+// 폼과 Pane의 사이즈 설정
+void CharacterToolPane::OnSize(UINT nType, int cx, int cy)
+{
+	// Pane 사이즈 설정
+	CDockablePane::OnSize(nType, cx, cy);
+
+	if (m_wndForm)
+	{
+		// 폼의 크기를 Pane의 크기에 맞게 변경
+		m_wndForm->SetWindowPos(
+			NULL, 0, 0, cx, cy,
+			SWP_NOZORDER);
+	}
+}
+
+// 마우스를 클릭할 때 실행
+int CharacterToolPane::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
+{
+	// 부모 프레임을 가져옴
+	CFrameWnd* pParentFrame = GetParentFrame();
+
+	// 부모 프레임이나 자식 프레임을 클릭할 때 실행
+	if (pParentFrame == pDesktopWnd ||
+		pDesktopWnd->IsChild(pParentFrame))
+	{
+		// 위에서 언급된 이외에 마우스 클릭 시 실행
+		return CDockablePane::OnMouseActivate(pDesktopWnd, nHitTest, message);
+	}
+
+	return MA_NOACTIVATE;
+}
+```
+
+</details>
+
 ***
 
 * 이동
