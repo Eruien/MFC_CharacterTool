@@ -1002,8 +1002,6 @@ void BoneHierarchyPane::OnSize(UINT nType, int cx, int cy)
 // 마우스를 클릭할 때 실행
 int BoneHierarchyPane::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	
 	// 부모 프레임을 가져옴
 	CFrameWnd* pParentFrame = GetParentFrame();
 	
@@ -1031,5 +1029,484 @@ int BoneHierarchyPane::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT me
 
 * 로드
 <img src="Image/RighthandFormLoad.gif" width="600" height="350"/>
+
+<details>
+<summary>Character Form 헤더파일</summary>
+	
+```cpp
+// 현재 캐릭터와 아이템의 Transform 데이터를 저장과 로드
+class ExportForm : public CFormView
+{
+	DECLARE_DYNCREATE(ExportForm)
+public:
+	static ExportForm* CreateOne(CWnd* parent);
+protected:
+	ExportForm();           
+	virtual ~ExportForm();
+
+public:
+#ifdef AFX_DESIGN_TIME
+	enum { IDD = IDD_ExportForm };
+#endif
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+#ifndef _WIN32_WCE
+	virtual void Dump(CDumpContext& dc) const;
+#endif
+#endif
+
+protected:
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
+
+	DECLARE_MESSAGE_MAP()
+public:
+	CListBox m_CharacterList;
+	CListBox m_AnimationList;
+	CListBox m_ItemList;
+	CListBox m_CharacterFormList;
+	CListBox m_AnimationFormList;
+	CListBox m_ItemFormList;
+	CString m_CharacterFormName;
+	CString m_AnimationFormName;
+	CString m_ItemFormName;
+	CString m_DeleteAniName;
+	CString m_DeleteItemName;
+	CString m_FormNameBox;
+public:
+	void LoadCharacterFile();
+	void LoadAnimationFile();
+	void LoadItemFile();
+public:
+	virtual void OnInitialUpdate();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnLbnSelchangeCharacterlist();
+	afx_msg void OnLbnSelchangeAnimationlist();
+	afx_msg void OnLbnSelchangeItemlist();
+	afx_msg void OnBnClickedCharacterselect();
+	afx_msg void OnBnClickedAddanimation();
+	afx_msg void OnBnClickedSubtractanimation();
+	afx_msg void OnBnClickedAdditem();
+	afx_msg void OnBnClickedSubtractitem();
+	afx_msg void OnBnClickedCreateform();
+	afx_msg void OnBnClickedLoadform();
+};
+```
+
+</details>
+
+<details>
+<summary>Character Form 소스파일</summary>
+	
+```cpp
+// 폼 생성 후에 Pane을 부모로 설정하기 위해 Pane을 부모 인자로 받음
+ExportForm* ExportForm::CreateOne(CWnd* parent)
+{
+	ExportForm* pForm = new ExportForm;
+	pForm->Create(NULL, NULL, WS_CHILD | WS_VISIBLE,
+		CRect(0, 0, 500, 500), parent, 0, NULL);
+
+	return pForm;
+}
+
+// 데이터 교환 함수
+void ExportForm::DoDataExchange(CDataExchange* pDX)
+{
+	// 데이터 교환을 위해 사용하는 기본 함수
+	CFormView::DoDataExchange(pDX);
+	// 폼에 있는 IDC_LIST를 각각 변수와 연결(캐릭터 리스트, 애니메이션 리스트, 아이템 리스트, 각종 폼 리스트)
+	DDX_Control(pDX, IDC_CharacterList, m_CharacterList);
+	DDX_Control(pDX, IDC_AnimationList, m_AnimationList);
+	DDX_Control(pDX, IDC_ItemList, m_ItemList);
+	DDX_Control(pDX, IDC_CharacterFormList, m_CharacterFormList);
+	DDX_Control(pDX, IDC_AnimationFormList, m_AnimationFormList);
+	DDX_Control(pDX, IDC_ItemFormList, m_ItemFormList);
+	DDX_Text(pDX, IDC_FormNameBox, m_FormNameBox);
+}
+
+// 다른 디렉토리에서 캐릭터 파일을 로드 배열에 추가
+void ExportForm::LoadCharacterFile()
+{
+	TCHAR path[MAX_PATH] = { 0, };
+	GetCurrentDirectory(MAX_PATH, path);
+	_tcscat_s(path, _T("\\..\\..\\res\\UserFile\\Character\\*.*"));
+	HANDLE hSearch = NULL;
+
+	WIN32_FIND_DATA  data;
+	hSearch = FindFirstFile(path, &data);
+
+	int iCnt = 0;
+	BOOL bFind = TRUE;
+	while (bFind)
+	{
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+
+		}
+		else
+		{
+			m_CharacterList.AddString(data.cFileName);
+		}
+		bFind = FindNextFile(hSearch, &data);
+	}
+	FindClose(hSearch);
+}
+
+// 다른 디렉토리에서 애니메이션 파일을 로드 배열에 추가
+void ExportForm::LoadAnimationFile()
+{
+	TCHAR path[MAX_PATH] = { 0, };
+	GetCurrentDirectory(MAX_PATH, path);
+	_tcscat_s(path, _T("\\..\\..\\res\\UserFile\\Animation\\*.*"));
+	HANDLE hSearch = NULL;
+
+	WIN32_FIND_DATA  data;
+	hSearch = FindFirstFile(path, &data);
+
+	int iCnt = 0;
+	BOOL bFind = TRUE;
+	while (bFind)
+	{
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+
+		}
+		else
+		{
+			m_AnimationList.AddString(data.cFileName);
+		}
+		bFind = FindNextFile(hSearch, &data);
+	}
+	FindClose(hSearch);
+}
+
+// 다른 디렉토리에서 아이템 파일을 로드 배열에 추가
+void ExportForm::LoadItemFile()
+{
+	TCHAR path[MAX_PATH] = { 0, };
+	GetCurrentDirectory(MAX_PATH, path);
+	_tcscat_s(path, _T("\\..\\..\\res\\UserFile\\Item\\*.*"));
+	HANDLE hSearch = NULL;
+
+	WIN32_FIND_DATA  data;
+	hSearch = FindFirstFile(path, &data);
+
+	int iCnt = 0;
+	BOOL bFind = TRUE;
+	while (bFind)
+	{
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
+		}
+		else
+		{
+			m_ItemList.AddString(data.cFileName);
+		}
+		bFind = FindNextFile(hSearch, &data);
+	}
+	FindClose(hSearch);
+}
+
+void ExportForm::OnInitialUpdate()
+{
+	CFormView::OnInitialUpdate();
+	LoadCharacterFile();
+	LoadAnimationFile();
+	LoadItemFile();
+	UpdateData(FALSE);
+}
+
+// 리스트에 저장되어 있는 캐릭터 데이터 로드 
+void ExportForm::OnLbnSelchangeCharacterlist()
+{
+	int iIndex = m_CharacterList.GetCurSel();
+	if (iIndex == LB_ERR)
+	{
+		return;
+	}
+	m_CharacterList.GetText(iIndex, m_CharacterFormName);
+
+	UpdateData(FALSE);
+}
+
+
+// 리스트에 저장되어 있는 애니메이션 데이터 로드
+void ExportForm::OnLbnSelchangeAnimationlist()
+{
+	int iIndex = m_AnimationList.GetCurSel();
+	if (iIndex == LB_ERR)
+	{
+		return;
+	}
+	m_AnimationList.GetText(iIndex, m_AnimationFormName);
+
+	UpdateData(FALSE);
+}
+
+
+// 리스트에 저장되어 있는 아이템 데이터 로드
+void ExportForm::OnLbnSelchangeItemlist()
+{
+	int iIndex = m_ItemList.GetCurSel();
+	if (iIndex == LB_ERR)
+	{
+		return;
+	}
+	m_ItemList.GetText(iIndex, m_ItemFormName);
+
+	UpdateData(FALSE);
+}
+
+// 폼에서 캐릭터 선택시 폼에 캐릭터 추가
+void ExportForm::OnBnClickedCharacterselect()
+{
+	m_CharacterFormList.ResetContent();
+	m_CharacterFormList.AddString(m_CharacterFormName);
+}
+
+// 폼에서 애니메이션 선택시 폼에 애니메이션 추가
+void ExportForm::OnBnClickedAddanimation()
+{
+	m_AnimationFormList.AddString(m_AnimationFormName);
+}
+
+void ExportForm::OnBnClickedSubtractanimation()
+{
+	int iIndex = m_AnimationFormList.GetCurSel();
+	m_AnimationFormList.GetText(iIndex, m_DeleteAniName);
+	m_AnimationFormList.DeleteString(iIndex);
+	UpdateData(FALSE);
+}
+
+// 폼에서 아이템 선택시 폼에 아이템 추가
+void ExportForm::OnBnClickedAdditem()
+{
+	m_ItemFormList.AddString(m_ItemFormName);
+}
+
+void ExportForm::OnBnClickedSubtractitem()
+{
+	int iIndex = m_ItemFormList.GetCurSel();
+	m_ItemFormList.GetText(iIndex, m_DeleteItemName);
+	m_ItemFormList.DeleteString(iIndex);
+	UpdateData(FALSE);
+}
+
+// 폼에서 위에서 저장된 데이터를 파일로 만듬
+void ExportForm::OnBnClickedCreateform()
+{
+	LExportIO::GetInstance().Reset();
+	m_CharacterFormList.GetText(0, m_CharacterFormName);
+	std::wstring characterFormPath = L"../../res/UserFile/Character/";
+	characterFormPath += m_CharacterFormName;
+	LExportIO::GetInstance().SetCharacterFbxPath(characterFormPath, LGlobal::g_MFCModel->m_matControl);
+
+	char Drive[MAX_PATH];
+	char Dir[MAX_PATH];
+	char FName[MAX_PATH];
+	char Ext[MAX_PATH];
+
+	_splitpath_s(CW2A(m_CharacterFormName), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+	std::wstring filename = mtw(FName);
+	std::wstring defaultFormName = L"../../res/UserFile/Animation/" + filename + L"Default" + L".bin";
+	LExportIO::GetInstance().SetDefaultPoseAnimationPath(defaultFormName);
+	
+	int iCount = m_AnimationFormList.GetCount();
+
+	for (int i = 0; i < iCount; i++)
+	{
+		CString data;
+		m_AnimationFormList.GetText(i, data);
+		std::wstring filePath = L"../../res/UserFile/Animation/";
+		filePath += data.GetString();
+		LExportIO::GetInstance().SetAnimationPath(filePath);
+	}
+
+	LExportIO::GetInstance().ResetiPos();
+
+	int itemCount = m_ItemFormList.GetCount();
+
+	for (int i = 0; i < itemCount; i++)
+	{
+		CString data;
+		m_ItemFormList.GetText(i, data);
+		std::wstring filePath = L"../../res/UserFile/Item/";
+		filePath += data.GetString();
+		LExportIO::GetInstance().SetItem(filePath, LGlobal::g_MFCItem->m_ParentBoneName,
+			LGlobal::g_MFCItem->m_pModel->m_matScale,
+			LGlobal::g_MFCItem->m_pModel->m_matRotation,
+			LGlobal::g_MFCItem->m_pModel->m_matTranslation);
+	}
+	
+	std::wstring formBox = m_FormNameBox;
+	LExportIO::GetInstance().ExportWrite(formBox, iCount, itemCount);
+}
+
+// 아까 전 저장했던 폼을 로드
+void ExportForm::OnBnClickedLoadform()
+{
+	CFileDialog dlg(TRUE, L"bmp", NULL,
+		OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST,
+		L"All Files(*.*)|*.*| bmp Files(*.bmp)|*.bmp|", this);
+
+	if (dlg.DoModal())
+	{
+		std::wstring selfFilePath = dlg.GetPathName();
+		CString selfFileName = dlg.GetFileName();
+		CString selfFileExt = dlg.GetFileExt();
+
+		m_CharacterFormList.ResetContent();
+		m_AnimationFormList.ResetContent();
+		m_ItemFormList.ResetContent();
+		LExportIO::GetInstance().ExportRead(std::wstring(selfFileName));
+		char Drive[MAX_PATH];
+		char Dir[MAX_PATH];
+		char FName[MAX_PATH];
+		char Ext[MAX_PATH];
+
+		_splitpath_s(LExportIO::GetInstance().m_ExportForm.characterFbxPath, Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+		std::wstring characterPath = mtw(FName) + mtw(Ext);
+		m_CharacterFormList.AddString(characterPath.c_str());
+
+		int animationListSize = LExportIO::GetInstance().m_AnimationList.size();
+
+		for (int i = 0; i < animationListSize; i++)
+		{
+			char Drive[MAX_PATH];
+			char Dir[MAX_PATH];
+			char FName[MAX_PATH];
+			char Ext[MAX_PATH];
+
+			_splitpath_s(wtm(LExportIO::GetInstance().m_AnimationList[i]).c_str(), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+			std::wstring animationPath = mtw(FName) + mtw(Ext);
+			m_AnimationFormList.AddString(animationPath.c_str());
+		}
+
+		int itemListSize = LExportIO::GetInstance().m_ItemList.size();
+
+		for (int i = 0; i < itemListSize; i++)
+		{
+			char Drive[MAX_PATH];
+			char Dir[MAX_PATH];
+			char FName[MAX_PATH];
+			char Ext[MAX_PATH];
+
+			_splitpath_s(wtm(LExportIO::GetInstance().m_ItemList[i]).c_str(), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+			std::wstring itemPath = mtw(FName) + mtw(Ext);
+			m_ItemFormList.AddString(itemPath.c_str());
+		}
+
+		std::wstring characterName = mtw(FName) + L".fbx";
+		LGlobal::g_MFCModel->m_pModel = LFbxMgr::GetInstance().GetPtr(characterName);
+
+		Drive[MAX_PATH];
+		Dir[MAX_PATH];
+		FName[MAX_PATH];
+		Ext[MAX_PATH];
+
+		_splitpath_s(LExportIO::GetInstance().m_ExportForm.defaultposeAnimation, Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+
+		std::wstring defaultAnimationName = mtw(FName) + L".fbx";
+		LGlobal::g_MFCModel->m_pActionModel = LFbxMgr::GetInstance().GetPtr(defaultAnimationName);
+
+		CString getItem;
+		m_ItemFormList.GetText(0, getItem);
+
+		_splitpath_s(CT2A(getItem), Drive, MAX_PATH, Dir, MAX_PATH, FName, MAX_PATH, Ext, MAX_PATH);
+		std::wstring itemPath = mtw(FName) + L".fbx";
+		LGlobal::g_MFCItem->m_pModel = LFbxMgr::GetInstance().GetPtr(itemPath);
+		LGlobal::g_MFCItem->m_ParentBoneName = LExportIO::GetInstance().m_ItemParentName[0];
+		LGlobal::g_MFCItem->m_pModel->m_matScale = LExportIO::GetInstance().m_ItemScale[0];
+		LGlobal::g_MFCItem->m_pModel->m_matRotation = LExportIO::GetInstance().m_ItemRotation[0];
+		LGlobal::g_MFCItem->m_pModel->m_matTranslation = LExportIO::GetInstance().m_ItemTranslation[0];
+		LGlobal::g_MFCItem->m_pModel->m_matSocket = LGlobal::g_MFCModel->m_pModel->m_NameMatrixMap[0][LGlobal::g_MFCItem->m_ParentBoneName];
+		LGlobal::g_MFCItem->m_matControl = LGlobal::g_MFCItem->m_pModel->m_matScale * LGlobal::g_MFCItem->m_pModel->m_matRotation * LGlobal::g_MFCItem->m_pModel->m_matSocket *
+			LGlobal::g_MFCItem->m_pModel->m_matTranslation;
+
+		for (int i = 0; i < 9; i++)
+		{
+			CharacterToolForm::g_matItemNumber[i] = LExportIO::GetInstance().m_ExportForm.matNumber[i];
+		}
+	}
+	
+}
+```
+
+</details>
+
+<details>
+<summary>Character Pane 헤더파일</summary>
+	
+```cpp
+// 폼의 부모가 되서 여기저기 부착되는 역할
+class ExportPane : public CDockablePane
+{
+	DECLARE_DYNAMIC(ExportPane)
+public:
+	ExportForm* m_wndForm;
+public:
+	ExportPane();
+	virtual ~ExportPane();
+
+protected:
+	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg int OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message);
+};
+```
+
+</details>
+
+<details>
+<summary>Character Pane 소스파일</summary>
+	
+```cpp
+// 폼을 생성하고 Pane을 부모로 설정
+int ExportPane::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	// 기본 토대가 되는 생성 실패시 -1 반환
+	if (CDockablePane::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	// Bone의 폼 생성 Bone의 Pane을 부모로 설정
+	m_wndForm = ExportForm::CreateOne(this);
+
+	return 0;
+}
+
+// 폼과 Pane의 사이즈 설정
+void ExportPane::OnSize(UINT nType, int cx, int cy)
+{
+	// Pane 사이즈 설정
+	CDockablePane::OnSize(nType, cx, cy);
+
+	if (m_wndForm)
+	{
+		// 폼의 크기를 Pane의 크기에 맞게 변경
+		m_wndForm->SetWindowPos(
+			NULL, 0, 0, cx, cy,
+			SWP_NOZORDER);
+	}
+}
+
+// 마우스를 클릭할 때 실행
+int ExportPane::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT message)
+{
+	// 부모 프레임을 가져옴
+	CFrameWnd* pParentFrame = GetParentFrame();
+
+	// 부모 프레임이나 자식 프레임을 클릭할 때 실행
+	if (pParentFrame == pDesktopWnd ||
+		pDesktopWnd->IsChild(pParentFrame))
+	{
+		return CDockablePane::OnMouseActivate(pDesktopWnd, nHitTest, message);
+	}
+
+	return  MA_NOACTIVATE;
+}
+```
+
+</details>
 
 
