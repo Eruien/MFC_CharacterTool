@@ -25,14 +25,6 @@
 * 애니메이션 불러오기
 <img src="Image/AnimationLoad.gif" width="600" height="350"/>
 
-# Item Load
-* 바이너리로 된 아이템 파일을 불러옴
-<img src="Image/ItemLoad.gif" width="600" height="350"/>
-
-# Transform
-* 엔진에 있는 transform 기능을 흉내를 내서 제작
-* 물체의 이동, 회전, 스케일 변환이 가능
-
 <details>
 <summary>Model View Form 헤더파일</summary>
 
@@ -418,6 +410,14 @@ int CharacterToolPane::OnMouseActivate(CWnd* pDesktopWnd, UINT nHitTest, UINT me
 ```
 
 </details>
+
+# Item Load
+* 바이너리로 된 아이템 파일을 불러옴
+<img src="Image/ItemLoad.gif" width="600" height="350"/>
+
+# Transform
+* 엔진에 있는 transform 기능을 흉내를 내서 제작
+* 물체의 이동, 회전, 스케일 변환이 가능
 
 ***
 
