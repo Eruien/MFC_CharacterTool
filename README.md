@@ -1,5 +1,7 @@
 # CharacterTool
 * MFC(Microsoft Foundation Class)를 이용해서 만든 캐릭터 툴
+* Dockable Pane이라는 MFC에서 제공하는 UI 요소를 이용해 제작
+* Dockable Pane은 패널을 드래그 하여 특정 위치에 도킹이 가능
 * 다운로드 : <https://naver.me/Fy24JUn2>
   
 <img src="Image/CharacterTool.gif" width="600" height="350"/>
